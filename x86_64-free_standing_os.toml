@@ -1,0 +1,28 @@
+llvm-target = "x86_64-unknown-none"
+
+# 定义了不同的整数、浮点数、指针类型的长度
+data-layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+arch = "x86_64"
+target-endian = "little"
+target-pointer-width = "64"
+target-c-int-width = "32"
+
+# 在裸机（bare metal）上运行内核
+os = "none"
+executables = true
+
+# 不使用平台默认提供的链接器，因为它可能不支持 Linux 目标系统。
+# 为了链接我们的内核，我们使用跨平台的 LLD链接器（LLD linker）
+linker-flavor = "ld.lld"
+linker = "rust-lld"
+
+# 不支持 panic 时的栈展开, 直接在 panic 时中止
+panic-strategy = "abort"
+
+# 禁用红区
+disable-redzone = true
+
+# -表示禁用, +表示启用
+# mmx 和 sse 特征决定了是否支持 SIMD
+# soft-float 表示使用基于整数的软件功能，模拟浮点数指针运算
+features = "-mmx,-sse,+soft-float"

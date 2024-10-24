@@ -1,0 +1,18 @@
+# ore crate以预编译库（precompiled library）的形式与 Rust 编译器一同发布——这时，
+# core crate只对支持的宿主系统有效，而对我们自定义的目标系统无效。
+# 如果我们想为其它系统编译代码，我们需要为这些系统重新编译整个 core crate
+
+# 需要启用 nightly 版本: rustup override add nightly
+
+[unstable]
+# 启用core内置库的内存操作功能
+build-std-features = ["compiler-builtins-mem"]
+# compiler_builtins 是 core 的必要依赖
+build-std = ["core", "compiler_builtins"]
+
+[build]
+# 指定目标系统, 相当于运行 `cargo build --target x86_64-free_standing_os.json`
+target = "x86_64-free_standing_os.json" 
+
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner"
