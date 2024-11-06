@@ -39,3 +39,8 @@ harness = false
 # 这个标志（flag）定义了是否将test runner用于集成测试中
 # 如果该标志位被设置为 false，那么默认的test runner和自定义的test runner功能都将被禁用，
 # 这样一来该测试就可以像一个普通的可执行程序一样运行了。
+
+[[test]]
+name = "stack_overflow"
+# 是一个 无约束测试，其原因就是我们无法在 double fault 被抛出后继续运行，所以连续进行多个测试其实是说不通的
+harness = false
