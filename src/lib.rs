@@ -4,32 +4,20 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
+
 pub mod gdt;
 pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
+use core::panic::PanicInfo;
 
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
-}
+    unsafe { interrupts::PICS.lock().initialize() }; // 初始化 8259 PIC 配置
 
-use core::panic::PanicInfo;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExitCode {
-    Success = 0x10,
-    Failed = 0x11,
-}
-
-pub fn exit_qemu(exit_code: QemuExitCode) {
-    use x86_64::instructions::port::Port;
-
-    unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
-    }
+    // 启用中断, 执行特殊的 sti (“set interrupts”) 指令来启用外部中断
+    x86_64::instructions::interrupts::enable();
 }
 
 pub trait Testable {
@@ -59,16 +47,39 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
-/// Entry point for `cargo test`
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed = 0x11,
+}
+
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut port = Port::new(0xf4);
+        port.write(exit_code as u32);
+    }
+}
+
+pub fn hlt_loop() -> ! {
+    // 节能的无限循环
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+
+/// Entry point for `cargo xtest`
 #[cfg(test)]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
