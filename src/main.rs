@@ -16,6 +16,15 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
+    // // 故意触发 page fault
+    // let ptr = 0xdeadbeaf as *mut u8;
+    // unsafe { *ptr = 42; }
+
+    // 查看内核中页表的存储方式
+    use x86_64::registers::control::Cr3;
+    let (level_4_page_table, _) = Cr3::read();
+    println!("Level 4 page table at: {:?}", level_4_page_table.start_address());
+
     println!("It did not crash!");
     toni_os::hlt_loop();
 }
